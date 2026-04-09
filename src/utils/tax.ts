@@ -133,3 +133,25 @@ export function formatVnd(amount: number): string {
   }).format(n)
   return `${formatted} ₫`
 }
+
+const groupedIntegerFormatter = new Intl.NumberFormat("vi-VN", {
+  maximumFractionDigits: 0,
+})
+
+/** Formats raw input to vi-VN grouped digits (e.g. 25.000.000). Strips non-digits first. */
+export function formatGroupedIntegerInput(raw: string): string {
+  const digits = raw.replace(/\D/g, "")
+  if (digits === "") return ""
+  const n = Number.parseInt(digits, 10)
+  if (!Number.isFinite(n)) return ""
+  return groupedIntegerFormatter.format(n)
+}
+
+/** Parses grouped integer input to a non-negative integer; empty → 0. */
+export function parseGroupedInteger(raw: string): number {
+  const digits = raw.replace(/\D/g, "")
+  if (digits === "") return 0
+  const n = Number.parseInt(digits, 10)
+  if (!Number.isFinite(n)) return NaN
+  return Math.max(0, n)
+}

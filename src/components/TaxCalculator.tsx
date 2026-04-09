@@ -21,26 +21,12 @@ import {
 import {
   type CalculationPeriod,
   calculateVietnamPit,
+  formatGroupedIntegerInput,
   formatVnd,
+  parseGroupedInteger,
   PERSONAL_DEDUCTION_MONTHLY,
   DEPENDENT_DEDUCTION_MONTHLY,
 } from "@/utils/tax"
-
-function parseOptionalMoney(raw: string): number {
-  const trimmed = raw.trim().replace(/\s/g, "")
-  if (trimmed === "") return 0
-  const n = Number.parseFloat(trimmed.replace(",", "."))
-  if (!Number.isFinite(n)) return NaN
-  return Math.max(0, n)
-}
-
-function parseDependents(raw: string): number {
-  const trimmed = raw.trim()
-  if (trimmed === "") return 0
-  const n = Number.parseInt(trimmed, 10)
-  if (!Number.isFinite(n)) return NaN
-  return Math.max(0, Math.floor(n))
-}
 
 function SummaryRow({
   label,
@@ -54,7 +40,11 @@ function SummaryRow({
   return (
     <div className="flex flex-wrap items-baseline justify-between gap-2">
       <span className="text-muted-foreground">{label}</span>
-      <span className={["font-mono text-sm tabular-nums", valueClassName].filter(Boolean).join(" ")}>
+      <span
+        className={["font-mono text-sm tabular-nums", valueClassName]
+          .filter(Boolean)
+          .join(" ")}
+      >
         {value}
       </span>
     </div>
@@ -68,10 +58,10 @@ export function TaxCalculator() {
   const [taxPaid, setTaxPaid] = React.useState("")
   const [insurance, setInsurance] = React.useState("")
 
-  const salaryNum = parseOptionalMoney(salary)
-  const dependentsNum = parseDependents(dependents)
-  const taxPaidNum = parseOptionalMoney(taxPaid)
-  const insuranceNum = parseOptionalMoney(insurance)
+  const salaryNum = parseGroupedInteger(salary)
+  const dependentsNum = parseGroupedInteger(dependents)
+  const taxPaidNum = parseGroupedInteger(taxPaid)
+  const insuranceNum = parseGroupedInteger(insurance)
 
   const hasInvalid =
     Number.isNaN(salaryNum) ||
@@ -92,8 +82,12 @@ export function TaxCalculator() {
 
   const periodLabel = period === "monthly" ? "month" : "year"
   const salaryLabel = period === "monthly" ? "Monthly salary" : "Annual salary"
-  const insuranceLabel = period === "monthly" ? "Insurance (monthly)" : "Insurance (annual)"
-  const taxPaidLabel = period === "monthly" ? "Tax already paid (monthly)" : "Tax already paid (annual)"
+  const insuranceLabel =
+    period === "monthly" ? "Insurance (monthly)" : "Insurance (annual)"
+  const taxPaidLabel =
+    period === "monthly"
+      ? "Tax already paid (monthly)"
+      : "Tax already paid (annual)"
 
   const deductionTooltip =
     period === "monthly"
@@ -114,8 +108,8 @@ export function TaxCalculator() {
       <CardHeader className="border-b border-border/80 pb-4">
         <CardTitle>Vietnam PIT refund calculator</CardTitle>
         <CardDescription>
-          Estimate taxable income, tax payable, and refund or balance due using progressive monthly
-          brackets (simplified employment scenario).
+          Estimate taxable income, tax payable, and refund or balance due using
+          progressive monthly brackets (simplified employment scenario).
         </CardDescription>
         <div className="flex flex-wrap gap-2 pt-2">
           <Button
@@ -146,9 +140,13 @@ export function TaxCalculator() {
             id="salary"
             inputMode="decimal"
             autoComplete="off"
-            placeholder={period === "monthly" ? "e.g. 25000000" : "e.g. 300000000"}
+            placeholder={
+              period === "monthly" ? "e.g. 25.000.000" : "e.g. 300.000.000"
+            }
             value={salary}
-            onChange={(e) => setSalary(e.target.value)}
+            onChange={(e) =>
+              setSalary(formatGroupedIntegerInput(e.target.value))
+            }
             aria-invalid={Number.isNaN(salaryNum) && salary.trim() !== ""}
           />
         </div>
@@ -161,8 +159,12 @@ export function TaxCalculator() {
             autoComplete="off"
             placeholder="0"
             value={dependents}
-            onChange={(e) => setDependents(e.target.value.replace(/\D/g, ""))}
-            aria-invalid={Number.isNaN(dependentsNum) && dependents.trim() !== ""}
+            onChange={(e) =>
+              setDependents(formatGroupedIntegerInput(e.target.value))
+            }
+            aria-invalid={
+              Number.isNaN(dependentsNum) && dependents.trim() !== ""
+            }
           />
         </div>
 
@@ -174,7 +176,9 @@ export function TaxCalculator() {
             autoComplete="off"
             placeholder="0"
             value={insurance}
-            onChange={(e) => setInsurance(e.target.value)}
+            onChange={(e) =>
+              setInsurance(formatGroupedIntegerInput(e.target.value))
+            }
             aria-invalid={Number.isNaN(insuranceNum) && insurance.trim() !== ""}
           />
         </div>
@@ -187,7 +191,9 @@ export function TaxCalculator() {
             autoComplete="off"
             placeholder="0"
             value={taxPaid}
-            onChange={(e) => setTaxPaid(e.target.value)}
+            onChange={(e) =>
+              setTaxPaid(formatGroupedIntegerInput(e.target.value))
+            }
             aria-invalid={Number.isNaN(taxPaidNum) && taxPaid.trim() !== ""}
           />
         </div>
@@ -208,28 +214,45 @@ export function TaxCalculator() {
                 <Info className="size-4" />
               </button>
             </TooltipTrigger>
-            <TooltipContent className="max-w-xs text-balance">{deductionTooltip}</TooltipContent>
+            <TooltipContent className="max-w-xs text-balance">
+              {deductionTooltip}
+            </TooltipContent>
           </Tooltip>
         </div>
 
         {hasInvalid ? (
-          <p className="text-sm text-destructive">Enter valid non-negative numbers.</p>
+          <p className="text-sm text-destructive">
+            Enter valid non-negative numbers.
+          </p>
         ) : breakdown ? (
           <div className="grid gap-3">
-            <SummaryRow label="Taxable income" value={formatVnd(breakdown.taxableIncome)} />
-            <SummaryRow label="Total deductions" value={formatVnd(breakdown.totalDeductions)} />
+            <SummaryRow
+              label="Taxable income"
+              value={formatVnd(breakdown.taxableIncome)}
+            />
+            <SummaryRow
+              label="Total deductions"
+              value={formatVnd(breakdown.totalDeductions)}
+            />
             <div className="grid gap-1 pl-2 text-xs text-muted-foreground">
               <div className="flex justify-between gap-2">
                 <span>Personal</span>
-                <span className="font-mono tabular-nums">{formatVnd(breakdown.personalDeduction)}</span>
+                <span className="font-mono tabular-nums">
+                  {formatVnd(breakdown.personalDeduction)}
+                </span>
               </div>
               <div className="flex justify-between gap-2">
                 <span>Dependents</span>
-                <span className="font-mono tabular-nums">{formatVnd(breakdown.dependentDeduction)}</span>
+                <span className="font-mono tabular-nums">
+                  {formatVnd(breakdown.dependentDeduction)}
+                </span>
               </div>
             </div>
             <Separator />
-            <SummaryRow label="Tax payable" value={formatVnd(breakdown.taxPayable)} />
+            <SummaryRow
+              label="Tax payable"
+              value={formatVnd(breakdown.taxPayable)}
+            />
             <SummaryRow label="Tax paid" value={formatVnd(breakdown.taxPaid)} />
             <Separator />
             <SummaryRow
@@ -242,10 +265,14 @@ export function TaxCalculator() {
               valueClassName={`font-medium ${refundTone}`}
             />
             {breakdown.refund > 0 && (
-              <p className="text-xs text-emerald-600 dark:text-emerald-400">You may be due a refund.</p>
+              <p className="text-xs text-emerald-600 dark:text-emerald-400">
+                You may be due a refund.
+              </p>
             )}
             {breakdown.refund < 0 && (
-              <p className="text-xs text-destructive">Additional tax may be owed.</p>
+              <p className="text-xs text-destructive">
+                Additional tax may be owed.
+              </p>
             )}
           </div>
         ) : null}
