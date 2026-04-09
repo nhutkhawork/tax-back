@@ -54,7 +54,7 @@ function SummaryRow({
 
 export function TaxCalculator() {
   const { t, language, setLanguage } = useI18n()
-  const [period, setPeriod] = React.useState<CalculationPeriod>("monthly")
+  const [period, setPeriod] = React.useState<CalculationPeriod>("yearly")
   const [salary, setSalary] = React.useState("")
   const [dependents, setDependents] = React.useState("")
   const [taxPaid, setTaxPaid] = React.useState("")

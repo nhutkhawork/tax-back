@@ -27,10 +27,8 @@ function readInitialLanguage(): AppLanguage {
   } catch {
     /* ignore */
   }
-  if (typeof navigator !== "undefined" && /^vi\b/i.test(navigator.language)) {
-    return "vi"
-  }
-  return "en"
+
+  return "vi"
 }
 
 export function I18nProvider({ children }: { children: React.ReactNode }) {
